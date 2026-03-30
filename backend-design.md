@@ -284,6 +284,6 @@ The architecture is designed to scale incrementally:
 - **Caching:** Cache wallet balances in Redis with a short TTL for dashboard reads, invalidated on any balance update
 - **Architecture:** At sufficient scale, the webhook handler is the clearest candidate to extract as an independent service given its distinct traffic and failure profile
 
-None of these changes require a rewrite — they're additive on top of the existing design.
+None of these changes require a rewrite - they're additive on top of the existing design.
 
 ---
