@@ -1,6 +1,6 @@
 # Backend System Design: User Wallet with Deposit & Withdrawal via Revio
 
-**Author:** [Your Name]
+**Author:** Kayla Delport
 **Date:** March 2026
 **Version:** 1.0
 
@@ -121,15 +121,15 @@ Once the user pays, Revio sends a webhook to the API. The API verifies the webho
 ```
 User                  API                        Revio
  │                     │                            │
- │── POST /withdraw ───▶│                            │
+ │──  POST /withdraw ─▶│                            │
  │   { amount }        │                            │
  │                     │── Lock wallet row          │
  │                     │── Deduct balance           │
  │                     │── Create transaction ──────│
  │                     │   status: 'pending'        │
- │                     │── POST /payouts ───────────▶│
- │                     │◀── { payout_ref } ─────────│
- │◀── { status: pending}│                           │
+ │                     │── POST /payouts ─────────▶│
+ │                     │◀── { payout_ref } ────────│
+ │◀─{ status: pending}│                            │
  │                     │                            │
  │                     │◀── Webhook: payout.completed / payout.failed
  │                     │── Update transaction status│
@@ -287,5 +287,3 @@ The architecture is designed to scale incrementally:
 None of these changes require a rewrite — they're additive on top of the existing design.
 
 ---
-
-*End of document*
