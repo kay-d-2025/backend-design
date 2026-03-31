@@ -4,6 +4,8 @@
 **Date:** March 2026
 **Version:** 1.0
 
+This document outlines the backend design for a user wallet service that handles deposits and withdrawals via Revio. It covers the data model, transaction flows, webhook handling, and the key decisions made around security and reliability. The focus is on building something production-ready from the start without over-engineering for scale that doesn't exist yet.
+
 ---
 
 ## Table of Contents
@@ -27,7 +29,7 @@
 | Language | Node.js (TypeScript) | Strong async model, large ecosystem, type safety reduces runtime errors in financial logic |
 | Framework | Express.js | Lightweight, well-understood, easy to reason about middleware chains |
 | Database | PostgreSQL | ACID compliance is non-negotiable for financial data; mature support for row-level locking and serialisable transactions |
-| ORM | Prisma | Type-safe queries, clean migration tooling, good DX for schema evolution |
+| ORM | Prisma | Type-safe queries, clean migration tooling, schema changes are easy to manage |
 | Auth | JWT (access) + refresh tokens | Stateless, scalable, standard |
 | Secret Management | AWS Secrets Manager | Centralised, auditable, avoids secrets in env files or version control |
 | Hosting | AWS (ECS Fargate + RDS) | Managed containers, managed database, good fit for this scale |
@@ -157,7 +159,7 @@ Every inbound webhook is verified before any processing:
 ```
 Revio ── POST /webhooks/revio ──▶ API
                                   │
-                      Verify HMAC + timestamp
+                      Verify signature + timestamp
                                   │
                       Insert into webhook_events (status: 'received')
                       Return 200 OK to Revio immediately
@@ -185,7 +187,7 @@ All webhook events are written to `webhook_events` regardless of outcome, captur
 
 ### 6.2 Replay Attacks & Spoofed Webhooks
 
-- HMAC-SHA256 signature verification on every webhook (see §5.1)
+- Signature verification on every webhook (see §5.1)
 - 5-minute timestamp window rejects replayed payloads
 - `idempotency_key` on transactions prevents double-application even if a webhook is delivered more than once
 
@@ -269,11 +271,7 @@ A nightly job compares the sum of completed transactions against each wallet bal
 
 ### 9.1 Transaction History
 
-```
-GET /wallet/transactions?page=1&limit=20&type=deposit&status=completed
-```
-
-A paginated query against the `transactions` table scoped to the authenticated user, with filters for type, status, and date range. The frontend handles rendering; the API returns JSON. If reporting needs grow, a read replica or materialised view would handle analytic queries without impacting the primary database.
+The endpoint returns a paginated, filterable list of transactions scoped to the authenticated user by type, status, and date range. The frontend handles rendering. If reporting needs grow, a read replica or materialised view would handle analytic queries without impacting the primary database.
 
 ### 9.2 Scaling to 100x
 
